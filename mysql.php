@@ -10,6 +10,7 @@ $phrases=array(
 $host='localhost';
 $user=get_current_user();
 $password='';
+$database='';
 $type='mysql';
 for($i=1;$i<sizeof($argv);$i++)
 {
@@ -32,6 +33,7 @@ for($i=1;$i<sizeof($argv);$i++)
                 case 'h': $host=$argv[$i+1];break;
                 case 'u': $user=$argv[$i+1];break;
                 case 'p': $password=$argv[$i+1];break;
+                case 'd': $database=$argv[$i+1];break;
                 }
             }
             if(!isset($argv[$i+1]))
@@ -45,24 +47,40 @@ for($i=1;$i<sizeof($argv);$i++)
     }
 }
 $cons='mysql';
-$dbase='';
-function databaseConnect()
+function databaseConnect($type,$host,$user,$password,$database='')
 {
-    mysql_connect('localhost','root');
-    mysql_query("set names utf8");
-}
-    $quer=mysql_query('show databases');
-while($query=mysql_fetch_array($quer))
-{
-    $phrases[]=$query[0];
-    $quer1=mysql_query('show tables in '.$query[0]);
-    while($query1=mysql_fetch_array($quer1))
+    $pdo='';
+    switch($type)
     {
-        $phrases[]=$query1[0];
-        $phrases[]=$query[0].'.'.$query1[0];
+    case 'mysql':
+        $pdo = new PDO(
+            'mysql:host='.$host.';dbname='.$database.';charset=utf8',
+             $user,
+             $password
+         );
     }
-
+    return $pdo;
 }
+$pdo=databaseConnect($type,$host,$user,$password,$database);
+function getKeywords($pdo){
+    $keyWords=array();
+    $statement=$pdo->query("show databases");
+    $statement->execute();
+    $databases = $statement->fetchAll(PDO::FETCH_NUM);
+    foreach($databases as $database)
+    {
+        $keyWords[]=$database[0];
+        $statement=$pdo->query("show tables in ".$database[0]);
+        $tables=$statement->fetchAll(PDO::FETCH_NUM);
+        foreach($tables as $table)
+        {
+            $keyWords[]=$table[0];
+            $keyWords[]=$database[0].'.'.$table[0];
+        }
+    }
+    return $keyWords;
+}
+$phrases=getKeywords($pdo);
 readline_read_history('history');
 readline_completion_function(function($input,$index){
     global $phrases;
@@ -83,7 +101,7 @@ while(true)
     if (!empty($val)) {
         readline_add_history($val);
     }
-    $table=runQuery($val);
+    $table=runQuery($pdo,$val);
     if(sizeof($table)>0)
     {
         echo outTable($table)."\n";

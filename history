@@ -1,6 +1,5 @@
 _HiStOrY_V2_
 as
-set\040names\040utf8;
 qwe
 asdasd
 qweq
@@ -24,7 +23,6 @@ show\040tables
 select\040*\040from\040info;
 select\040*\040from\040tennis_players\040limit\04050;
 select\040*\040from\040tennis_players\040limit\04070;
-select\040*\040from\040tennis_players\040limit\04040;
 select\040*\040from\040tennis_players\040limit\0403~50;
 select\040*\040from\040tennis_players\040limit\04035;
 select\040*\040from\040tennis_players\040limit\04033;
@@ -37,6 +35,8 @@ select\040*\040from\040tennis_players;
 select\040*\040from\040tennis_players\040limit\04010;
 select\040*\040from\040tennis_players\040limit\0405;
 select\040*\040from\040tennis_players\040limit\0408;
-use\040betserver;
-select\040*\040from\040tennis_players\040limit\04080;
 ls
+set\040names\040utf8;
+use\040betserver;
+select\040*\040from\040tennis_players\040limit\04040;
+select\040*\040from\040tennis_players\040limit\04080;

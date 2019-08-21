@@ -124,7 +124,7 @@ function outTable($array,$limit=0){
     $out.='+'.$endTable."+";
     return $out;
 }
-function runQuery($query){
+function runQuery($pdo,$query){
 
     $keyWords=array(
         "use",
@@ -134,17 +134,16 @@ function runQuery($query){
     $table=array();
     if(in_array($expl[0],$keyWords))
     {
-        mysql_query($query);
+        $statement=$pdo->query($query);
+        $statement->execute();
     }
     else
     {
         if(strlen($query)>3)
         {
-            $quer=mysql_query($query);
-            while($res=mysql_fetch_assoc($quer))
-            {
-                $table[]=$res;
-            }
+            $statement=$pdo->query($query);
+            $statement->execute();
+            $table = $statement->fetchAll(PDO::FETCH_ASSOC);
         }
     }
     return $table;
