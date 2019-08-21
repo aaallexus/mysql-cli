@@ -6,20 +6,22 @@ $phrases=array(
     'show',
     'set',
 );
-
+$executeScript='';
 $host='localhost';
 $user=get_current_user();
 $password='';
 $database='';
-$type='mysql';
+$typeDB='mysql';
+$vimOut=false;
 for($i=1;$i<sizeof($argv);$i++)
 {
     if(substr($argv[$i],0,2)=='--')
     {
         switch(substr($argv[$i],2))
         {
-        case 'mysql': $type='mysql';break;
-        case 'mssql': $type='mssql';break;
+        case 'mysql': $typeDB='mysql';break;
+        case 'mssql': $typeDB='mssql';break;
+        case 'vim' : $vimOut=true;break;
         }
     }
     else
@@ -34,6 +36,7 @@ for($i=1;$i<sizeof($argv);$i++)
                 case 'u': $user=$argv[$i+1];break;
                 case 'p': $password=$argv[$i+1];break;
                 case 'd': $database=$argv[$i+1];break;
+                case 's': $executeScript=$argv[$i+1];break;
                 }
             }
             if(!isset($argv[$i+1]))
@@ -47,40 +50,94 @@ for($i=1;$i<sizeof($argv);$i++)
     }
 }
 $cons='mysql';
-function databaseConnect($type,$host,$user,$password,$database='')
+function databaseConnect($typeDB,$host,$user,$password,$database='')
 {
     $pdo='';
-    switch($type)
+    switch($typeDB)
     {
     case 'mysql':
         $pdo = new PDO(
             'mysql:host='.$host.';dbname='.$database.';charset=utf8',
              $user,
              $password
-         );
+        );
+        break;
+    case 'mssql':
+        $pdo = new PDO(
+            'dblib:host='.$host.';dbname='.$database,
+             $user,
+             $password
+        );
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        break;
     }
     return $pdo;
 }
-$pdo=databaseConnect($type,$host,$user,$password,$database);
-function getKeywords($pdo){
-    $keyWords=array();
-    $statement=$pdo->query("show databases");
+$pdo=databaseConnect($typeDB,$host,$user,$password,$database);
+function getKeywords($pdo,$typeDB){
+    global $database;
+    $keyWords=array(
+        'select',
+        'from',
+        'where',
+        'join',
+        'distinct'
+
+    );
+    switch($typeDB)
+    {
+    case 'mysql':
+        $statement=$pdo->query("show databases");break;
+    case 'mssql':
+        $statement=$pdo->query("SELECT name FROM master.sys.databases");break;
+    }
     $statement->execute();
     $databases = $statement->fetchAll(PDO::FETCH_NUM);
-    foreach($databases as $database)
+    foreach($databases as $db)
     {
-        $keyWords[]=$database[0];
-        $statement=$pdo->query("show tables in ".$database[0]);
-        $tables=$statement->fetchAll(PDO::FETCH_NUM);
-        foreach($tables as $table)
+        $keyWords[]=$db[0];
+        switch($typeDB)
         {
-            $keyWords[]=$table[0];
-            $keyWords[]=$database[0].'.'.$table[0];
+        case 'mysql':
+            $statement=$pdo->query("show tables in ".$db[0]);
+            $statement->execute();
+            $tables=$statement->fetchAll(PDO::FETCH_NUM);
+            foreach($tables as $table)
+            {
+                $keyWords[]=$table[0];
+                $keyWords[]=$db[0].'.'.$table[0];
+            }
+            break;
+        case 'mssql':
+            $statement=$pdo->query("use ".$db[0]);
+            $statement->execute();
+            $statement=$pdo->query("SELECT * FROM INFORMATION_SCHEMA.TABLES;");
+            $statement->execute();
+            $tables=$statement->fetchAll(PDO::FETCH_NUM);
+            foreach($tables as $table)
+            {
+                $keyWords[]=$table[2];
+                $keyWords[]=$db[0].'.'.$table[1].'.'.$table[2];
+            }
+            $statement=$pdo->query("SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS");
+            $statement->execute();
+            $fields=$statement->fetchAll(PDO::FETCH_NUM);
+            foreach($fields as $field)
+            {
+                $keyWords[]=$field[1];
+                $keyWords[]=$field[0].'.'.$field[1];
+            }
+            if($database!='')
+            {
+                $statement=$pdo->query("use $database");
+                $statement->execute();
+            }
+            break;
         }
     }
     return $keyWords;
 }
-$phrases=getKeywords($pdo);
+$phrases=getKeywords($pdo,$typeDB);
 readline_read_history('history');
 readline_completion_function(function($input,$index){
     global $phrases;
@@ -95,31 +152,56 @@ readline_completion_function(function($input,$index){
     if($input=='')
         return array("");
 });
-while(true)
+if($executeScript=='')
 {
-    $val = readline($cons.">");
-    if (!empty($val)) {
-        readline_add_history($val);
-    }
-    $table=runQuery($pdo,$val);
-    if(sizeof($table)>0)
+    while(true)
     {
-        echo outTable($table)."\n";
-    }
-    readline_write_history('history');
-    $history=explode("\n",file_get_contents('history'));
-    $newHistory=array();
-    $keys=array();
-    for($i=sizeof($history)-1;$i>=0;$i--)
-    {
-        if(!isset($keys[$history[$i]]))
+        $val = readline($cons.">");
+        if (!empty($val)) {
+            readline_add_history($val);
+        }
+        $table=runQuery($pdo,$val);
+        if(sizeof($table)>0)
         {
-            $keys[$history[$i]]=1;
-            $newHistory[]=$history[$i];
+            echo outTable($table)."\n";
+        }
+        readline_write_history('history');
+        $history=explode("\n",file_get_contents('history'));
+        $newHistory=array();
+        $keys=array();
+        for($i=sizeof($history)-1;$i>=0;$i--)
+        {
+            if(!isset($keys[$history[$i]]))
+            {
+                $keys[$history[$i]]=1;
+                $newHistory[]=$history[$i];
+            }
+        }
+        file_put_contents('history',implode("\n",array_reverse($newHistory)));
+        readline_read_history('history');
+    }
+}
+else
+{
+    $out="";
+    $script=file_get_contents($executeScript);
+    $scripts=explode('go',$script);
+    foreach($scripts as $sc)
+    {
+        $table=runQuery($pdo,$sc);
+        if(sizeof($table)>0)
+        {
+            if($vimOut)
+                $out.=outTable($table,0,1000000)."\n\n";
+            else
+                $out.=outTable($table)."\n\n";
         }
     }
-    file_put_contents('history',implode("\n",array_reverse($newHistory)));
-    readline_read_history('history');
+    if($vimOut)
+    {
+        system('echo "'.$out.'" | vim -c "set nowrap" - >/dev/tty');
+    }
+    else
+        echo $out."\n";
 }
-
 ?>

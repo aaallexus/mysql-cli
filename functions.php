@@ -1,8 +1,6 @@
 <?php
 
-function outTable($array,$limit=0){
-    $screenWidth=140;
-    $screenWidth=145;
+function outTable($array,$limit=0,$screenWidth=140){
     $maxSizes=array();
     if(isset($array[0]))
     {
@@ -94,14 +92,14 @@ function outTable($array,$limit=0){
             {
                 $lastSymbol=' ... >';
             }
-            $out.="\n+";
+            $out.="+";
             for($j=1;($j<mb_strlen($row,'utf8') && $j<$screenWidth);$j++)
             {
                 $out.='-';
                 $endTable.='-';
             }
             $out.="+\n";
-            $out.=mb_substr($header,0,$screenWidth,'utf8').$lastSymbol.$out;
+            $out.=mb_substr($header,0,$screenWidth,'utf8').$lastSymbol."\n".$out;
         }
  #       for($j=1;$j<strlen($row);$j++)
  #           $out.='-';
@@ -134,16 +132,27 @@ function runQuery($pdo,$query){
     $table=array();
     if(in_array($expl[0],$keyWords))
     {
-        $statement=$pdo->query($query);
+        $statement=$pdo->prepare($query);
         $statement->execute();
     }
     else
     {
         if(strlen($query)>3)
         {
-            $statement=$pdo->query($query);
-            $statement->execute();
-            $table = $statement->fetchAll(PDO::FETCH_ASSOC);
+            try
+            {
+                $statement=$pdo->query($query);
+                $statement->execute();
+                $table = $statement->fetchAll(PDO::FETCH_ASSOC);
+            }
+            catch (PDOException $e)
+            {
+                echo $e->getMessage()."\n";
+            }
+            catch (Exception $e)
+            {
+                echo $e->getMessage()."\n";
+            }
         }
     }
     return $table;
