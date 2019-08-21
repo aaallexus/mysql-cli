@@ -7,12 +7,51 @@ $phrases=array(
     'set',
 );
 
-
+$host='localhost';
+$user=get_current_user();
+$password='';
+$type='mysql';
+for($i=1;$i<sizeof($argv);$i++)
+{
+    if(substr($argv[$i],0,2)=='--')
+    {
+        switch(substr($argv[$i],2))
+        {
+        case 'mysql': $type='mysql';break;
+        case 'mssql': $type='mssql';break;
+        }
+    }
+    else
+    {
+        if(substr($argv[$i],0,1)=='-' )
+        {
+            if(isset($argv[$i+1]))
+            {
+                switch(substr($argv[$i],1))
+                {
+                case 'h': $host=$argv[$i+1];break;
+                case 'u': $user=$argv[$i+1];break;
+                case 'p': $password=$argv[$i+1];break;
+                }
+            }
+            if(!isset($argv[$i+1]))
+            {
+                switch(substr($argv[$i],1))
+                {
+                case 'p': $password=readline('Password : ');
+                }
+            }
+        }
+    }
+}
 $cons='mysql';
 $dbase='';
-mysql_connect('localhost','root');
-mysql_query("set names utf8");
-$quer=mysql_query('show databases');
+function databaseConnect()
+{
+    mysql_connect('localhost','root');
+    mysql_query("set names utf8");
+}
+    $quer=mysql_query('show databases');
 while($query=mysql_fetch_array($quer))
 {
     $phrases[]=$query[0];
