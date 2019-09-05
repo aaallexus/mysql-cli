@@ -1,5 +1,4 @@
 <?php
-
 function outTable($array,$limit=0,$screenWidth=140){
     $maxSizes=array();
     if(isset($array[0]))
@@ -123,13 +122,20 @@ function outTable($array,$limit=0,$screenWidth=140){
     return $out;
 }
 function runQuery($pdo,$query){
-
     $keyWords=array(
         "use",
         "set"
     );
     $expl=explode(' ',$query);
     $table=array();
+/*    for($i=0;$i<5000;$i++)
+    {
+        for($j=0;$j<10;$j++)
+        {
+            $table[$i][$j]=100;
+        }
+    }
+    return $table;*/
     if(in_array($expl[0],$keyWords))
     {
         $statement=$pdo->prepare($query);
