@@ -37,7 +37,6 @@ select\040*\040from\040tennis_players\040limit\0405;
 select\040*\040from\040tennis_players\040limit\0408;
 ls
 set\040names\040utf8;
-use\040betserver;
 select\040*\040from\040tennis_players\040limit\04040;
 select\040*\040from\040tennis_players\040limit\04080;
 SELECT\040name\040FROM\040master.sys.databases
@@ -56,3 +55,5 @@ select\040top(1)\040asd\040from\040CallMetrics
 describe\040CallMetrics;
 select\040top(1)\040*\040from\040CallMetrics
 select\040top(10)\040CallMetrics.C1,\040CallMetrics.CallId\040from\040CallMetrics;
+use\040betserver;
+select\040*\040from\040football_team;
