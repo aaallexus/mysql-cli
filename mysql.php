@@ -14,7 +14,7 @@ $database='';
 $typeDB='mysql';
 $vimOut=false;
 $maxWidth=140;
-$options=getopt("h:u:p:d:s:",array("mysql","mssql","vim",'max-width:'));
+$options=getopt("h:u:p:d:s:",array("mysql","mssql","vim",'max-width:','screen-width:'));
 {
     foreach($options as $arg=>$value)
     {
@@ -28,6 +28,7 @@ $options=getopt("h:u:p:d:s:",array("mysql","mssql","vim",'max-width:'));
             case 'mysql': $typeDB='mysql';break;
             case 'mssql': $typeDB='mssql';break;
             case 'vim' : $vimOut=true;break;
+            case 'screen-width' :
             case 'max-width': $maxWidth=$value;break;
         }
     }
