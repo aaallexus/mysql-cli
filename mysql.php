@@ -184,7 +184,7 @@ if($executeScript=='')
         $endTime=microtime(true);
         if(sizeof($table)>0)
         {
-            echo outTable($table)."\n";
+            echo outTable($table,0,$maxWidth)."\n";
         }
         echo sprintf(sizeof($table).' rows in set (%.4f sec)',$endTime-$startTime)."\n";
         readline_write_history('history');
