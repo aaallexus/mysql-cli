@@ -13,7 +13,26 @@ $password='';
 $database='';
 $typeDB='mysql';
 $vimOut=false;
-for($i=1;$i<sizeof($argv);$i++)
+$maxWidth=140;
+$options=getopt("h:u:p:d:s:",array("mysql","mssql","vim",'max-width:'));
+{
+    foreach($options as $arg=>$value)
+    {
+        switch($arg)
+        {
+            case 'h': $host=$value;break;
+            case 'u': $user=$value;break;
+            case 'p': $password=$value;break;
+            case 'd': $database=$value;break;
+            case 's': $executeScript=$value;break;
+            case 'mysql': $typeDB='mysql';break;
+            case 'mssql': $typeDB='mssql';break;
+            case 'vim' : $vimOut=true;break;
+            case 'max-width': $maxWidth=$value;break;
+        }
+    }
+}
+/*for($i=1;$i<sizeof($argv);$i++)
 {
     if(substr($argv[$i],0,2)=='--')
     {
@@ -48,7 +67,7 @@ for($i=1;$i<sizeof($argv);$i++)
             }
         }
     }
-}
+}*/
 $cons='mysql';
 function databaseConnect($typeDB,$host,$user,$password,$database='')
 {
@@ -160,11 +179,14 @@ if($executeScript=='')
         if (!empty($val)) {
             readline_add_history($val);
         }
+        $startTime=microtime(true);
         $table=runQuery($pdo,$val);
+        $endTime=microtime(true);
         if(sizeof($table)>0)
         {
             echo outTable($table)."\n";
         }
+        echo sprintf(sizeof($table).' rows in set (%.4f sec)',$endTime-$startTime)."\n";
         readline_write_history('history');
         $history=explode("\n",file_get_contents('history'));
         $newHistory=array();
@@ -186,22 +208,42 @@ else
     $out="";
     $script=file_get_contents($executeScript);
     $scripts=explode('go',$script);
-    foreach($scripts as $sc)
-    {
-        $table=runQuery($pdo,$sc);
-        if(sizeof($table)>0)
-        {
-            if($vimOut)
-                $out.=outTable($table,0,1000000)."\n\n";
-            else
-                $out.=outTable($table)."\n\n";
-        }
-    }
     if($vimOut)
     {
-        system('echo "'.$out.'" | vim -c "set nowrap" - >/dev/tty');
+        $command='php '.$argv[0].' ';
+        foreach($options as $key=>$value)
+        {
+            if($key!='vim')
+            {
+                if(strlen($key)>1)
+                    $command.='-';
+                $command.='-'.$key.' ';
+                if($value!==false)
+                {
+                    $command.=$value.' ';
+                }
+            }
+        }
+        $command.=' --max-width 1000000';
+        system($command.' | vim -c "set nowrap" - >/dev/tty');
+#        system('php mysql.php --mssql -h CXBI -u admin -p Admin123 -s script.sql | vim -c "set nowrap" - >/dev/tty');
+        #system('echo "'.$out.'" | vim -c "set nowrap" - >/dev/tty');
     }
     else
-        echo $out."\n";
+    {
+        foreach($scripts as $sc)
+        {
+            $startTime=microtime(true);
+            $table=runQuery($pdo,$sc);
+            $endTime=microtime(true);
+            if(sizeof($table)>0)
+            {
+                    $out.=outTable($table,0,$maxWidth)."\n";
+            }
+            $out.=sprintf(sizeof($table).' rows in set (%.4f sec)',$endTime-$startTime)."\n";
+        }
+        echo $out;
+    }
 }
 ?>
+
