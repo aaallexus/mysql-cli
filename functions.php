@@ -126,38 +126,41 @@ function runQuery($pdo,$query){
         "use",
         "set"
     );
-    $expl=explode(' ',$query);
-    $table=array();
-/*    for($i=0;$i<5000;$i++)
+    $table=array();;
+    if(trim($query)!='')
     {
-        for($j=0;$j<10;$j++)
+        $expl=explode(' ',$query);
+    /*    for($i=0;$i<5000;$i++)
         {
-            $table[$i][$j]=100;
+            for($j=0;$j<10;$j++)
+            {
+                $table[$i][$j]=100;
+            }
         }
-    }
-    return $table;*/
-    if(in_array($expl[0],$keyWords))
-    {
-        $statement=$pdo->prepare($query);
-        $statement->execute();
-    }
-    else
-    {
-        if(strlen($query)>3)
+        return $table;*/
+        if(in_array($expl[0],$keyWords))
         {
-            try
+            $statement=$pdo->prepare($query);
+            $statement->execute();
+        }
+        else
+        {
+            if(strlen($query)>3)
             {
-                $statement=$pdo->query($query);
-                $statement->execute();
-                $table = $statement->fetchAll(PDO::FETCH_ASSOC);
-            }
-            catch (PDOException $e)
-            {
-                echo $e->getMessage()."\n";
-            }
-            catch (Exception $e)
-            {
-                echo $e->getMessage()."\n";
+                try
+                {
+                    $statement=$pdo->query($query);
+                    $statement->execute();
+                    $table = $statement->fetchAll(PDO::FETCH_ASSOC);
+                }
+                catch (PDOException $e)
+                {
+                    echo $e->getMessage()."\n";
+                }
+                catch (Exception $e)
+                {
+                    echo $e->getMessage()."\n";
+                }
             }
         }
     }

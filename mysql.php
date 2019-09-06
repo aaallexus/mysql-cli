@@ -209,6 +209,10 @@ else
     $out="";
     $script=file_get_contents($executeScript);
     $scripts=explode('go',$script);
+    if(sizeof($scripts)==1)
+    {
+        $scripts=explode(';',$script);
+    }
     if($vimOut)
     {
         $command='php '.$argv[0].' ';
@@ -234,14 +238,17 @@ else
     {
         foreach($scripts as $sc)
         {
-            $startTime=microtime(true);
-            $table=runQuery($pdo,$sc);
-            $endTime=microtime(true);
-            if(sizeof($table)>0)
+            if(trim($sc)!='')
             {
-                    $out.=outTable($table,0,$maxWidth)."\n";
+                $startTime=microtime(true);
+                $table=runQuery($pdo,$sc);
+                $endTime=microtime(true);
+                if(sizeof($table)>0)
+                {
+                        $out.=outTable($table,0,$maxWidth)."\n";
+                }
+                $out.=sprintf(sizeof($table).' rows in set (%.4f sec)',$endTime-$startTime)."\n";
             }
-            $out.=sprintf(sizeof($table).' rows in set (%.4f sec)',$endTime-$startTime)."\n";
         }
         echo $out;
     }
